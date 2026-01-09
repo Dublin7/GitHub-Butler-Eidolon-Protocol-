@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Security: Hardened CSP for Firebase, Google APIs, and CDNs -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://generativelanguage.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https: https://avatars.githubusercontent.com https://*.githubusercontent.com; connect-src 'self' https:;">
+    <title>GitHub Butler v2.9.1 • Neural Weaving</title>
+    <!-- Dependencies -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --border-color: #30363d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --accent-green: #238636;
+            --accent-blue: #58a6ff;
+            --accent-purple: #a371f7;
+            --accent-orange: #d29922;
+            --accent-red: #f85149;
+            --gradient-protocol: linear-gradient(135deg, #a371f7 0%, #58a6ff 50%, #238636 100%);
+            --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+
+        body.light {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f6f8fa;
+            --bg-tertiary: #eaeef2;
+            --border-color: #d0d7de;
+            --text-primary: #1f2328;
+            --text-secondary: #656d76;
+            --text-muted: #8c959f;
+        }
+
+        body.void {
+            --bg-primary: #050000;
+            --bg-secondary: #120000;
+            --bg-tertiary: #1a0000;
+            --border-color: #440000;
+            --text-primary: #ffaaaa;
+            --accent-blue: #ff0000;
+            filter: sepia(0.2) contrast(1.2);
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+        .glitching { animation: glitch 0.2s infinite; overflow: hidden; }
+
+        .skeleton { background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--border-color) 50%, var(--bg-tertiary) 75%); background-size: 200% 100%; animation: skeleton-loading 1.5s infinite; border-radius: 4px; }
+        @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background 0.8s ease, color 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        .header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 0 20px 0; margin-bottom: 20px; border-bottom: 1px solid var(--border-color);
+        }
+        .logo { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .logo-icon {
+            width: 42px; height: 42px; background: var(--gradient-protocol); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; font-size: 22px; color: white;
+            box-shadow: 0 0 20px rgba(163, 113, 247, 0.2);
+        }
+
+        .btn {
+            padding: 8px 16px; border-radius: 8px; font-family: inherit;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: 0.2s; border: none;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-primary { background: var(--gradient-protocol); color: white; }
+        .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .btn-ghost { background: transparent; color: var(--text-muted); }
+
+        .main-content { display: none; grid-template-columns: 320px 1fr; gap: 24px; transition: opacity 0.5s ease; }
+        .main-content.active { display: grid; }
+
+        .sidebar-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 16px; position: relative; }
+
+        .nav-vertical { display: flex; flex-direction: column; gap: 4px; }
+        .nav-item {
+            padding: 12px 14px; border-radius: 8px; color: var(--text-secondary);
+            font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.2s;
+        }
+        .nav-item:hover { color: var(--text-primary); background: var(--bg-tertiary); }
+        .nav-item.active { background: var(--bg-tertiary); color: var(--accent-blue); border-left: 4px solid var(--accent-blue); font-weight: 600; }
+
+        .repo-card {
+            background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px;
+            padding: 14px; transition: 0.2s; cursor: pointer; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .repo-card:hover { border-color: var(--accent-blue); transform: translateY(-2px); }
+
+        #previewWindow {
+            position: fixed; top: 80px; right: 20px; width: 420px; height: 550px;
+            background: var(--bg-secondary); border: 2px solid var(--accent-blue);
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); z-index: 2000;
+            display: none; flex-direction: column; overflow: hidden;
+        }
+        #previewHeader { padding: 12px; background: var(--bg-tertiary); cursor: move; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+        #previewIframe { flex: 1; border: none; background: white; }
+
+        .code-viewer { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; margin-top: 16px; display: flex; flex-direction: column; }
+        .code-header { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--bg-tertiary); border-bottom: 1px solid var(--border-color); }
+        #codeDisplay { white-space: pre-wrap; word-break: break-all; display: block; padding: 20px; font-family: 'JetBrains Mono'; font-size: 0.85rem; line-height: 1.6; }
+
+        .search-mini { width: 100%; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); font-size: 0.8rem; margin-bottom: 10px; outline: none; }
+        
+        .loading-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 9000; align-items: center; justify-content: center; flex-direction: column; gap: 15px; }
+        .loading-overlay.active { display: flex; }
+        
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { padding: 14px 20px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 10px; box-shadow: var(--shadow-lg); animation: slideIn 0.3s forwards; display: flex; align-items: center; gap: 12px; }
+
+        .status-pill { font-size: 9px; padding: 2px 8px; border-radius: 100px; font-weight: bold; text-transform: uppercase; }
+
+        @media (max-width: 800px) {
+            .main-content.active { grid-template-columns: 1fr; }
+            .sidebar { display: none; }
+        }
+    </style>
+</head>
+<body class="dark">
+    <audio id="eidolonHum" loop hidden>
+        <source src="https://Dublin7.github.io/assets/hum.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="container">
+        <header class="header">
+            <div class="logo" onclick="location.reload()">
+                <div class="logo-icon"><i class="fas fa-eye"></i></div>
+                <div class="logo-text">
+                    <h1 style="font-size: 1.1rem; letter-spacing: -0.5px;">The Butler Protocol</h1>
+                    <div id="syncStatus" style="font-size: 10px; color: var(--text-muted);"><i class="fas fa-tower-broadcast"></i> Archive Synced</div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div id="rateLimitBadge" class="status-pill" style="background: rgba(88, 166, 255, 0.1); color: var(--accent-blue); display: none;">Anchor: 100%</div>
+                <button class="btn btn-secondary btn-sm" id="voiceBtn" onclick="toggleVoice()" title="Voice Butler"><i class="fas fa-microphone"></i></button>
+                <button class="btn btn-secondary btn-sm" onclick="togglePreview()" id="previewBtn"><i class="fas fa-laptop-code"></i> Sandbox</button>
+                <button class="theme-toggle btn-secondary btn-sm" onclick="toggleTheme()" aria-label="Toggle Atmosphere"><i class="fas fa-moon"></i></button>
+                <button id="discBtn" class="btn btn-secondary btn-sm" style="display: none;" onclick="disconnect()">Sever</button>
+            </div>
+        </header>
+
+        <!-- Portal -->
+        <section id="authSection" class="sidebar-card" style="padding: 50px; text-align: center;">
+            <div class="logo-icon" style="margin: 0 auto 30px auto; width: 60px; height: 60px; font-size: 30px;"><i class="fas fa-fingerprint"></i></div>
+            <h2 style="letter-spacing: 1px;">Neural Synchronization</h2>
+            <p style="color: var(--text-secondary); margin: 15px 0 30px 0; font-size: 0.9rem;">The system requires a GitHub Token to link your shards.</p>
+            <div style="max-width: 450px; margin: 0 auto; display: flex; gap: 10px;">
+                <input type="password" id="tokenInput" class="btn-secondary" style="flex: 1; padding: 14px; border-radius: 10px; text-align: left;" placeholder="ghp_... (Memory Only)">
+                <button class="btn btn-primary" style="padding: 0 25px;" onclick="connect()">Link</button>
+            </div>
+        </section>
+
+        <!-- Interface -->
+        <main id="mainContent" class="main-content">
+            <aside class="sidebar">
+                <div class="sidebar-card">
+                    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px;">
+                        <img id="uAvatar" style="width: 44px; border-radius: 50%; border: 2px solid var(--accent-purple);" alt="User">
+                        <div style="min-width: 0;">
+                            <div id="uName" style="font-weight: 700; font-size: 0.9rem;">Synchronizing...</div>
+                            <div id="uScopes" style="font-size: 9px; color: var(--accent-blue); opacity: 0.7;">State: Secure</div>
+                        </div>
+                    </div>
+                    <nav class="nav-vertical">
+                        <div class="nav-item active" data-tab="repos" onclick="switchTab('repos')"><i class="fas fa-layer-group"></i> Neural Shards</div>
+                        <div class="nav-item" data-tab="browser" onclick="switchTab('browser')"><i class="fas fa-compass"></i> Fragment Explorer</div>
+                        <div class="nav-item" data-tab="chronicle" onclick="switchTab('chronicle')"><i class="fas fa-dna"></i> The Chronicle</div>
+                    </nav>
+                </div>
+
+                <div class="sidebar-card" style="border-top: 4px solid var(--accent-purple);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h4 style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;"><i class="fas fa-brain"></i> Neural Memory</h4>
+                        <button class="btn btn-ghost btn-sm" onclick="shareWorkspace()" title="Transmit Link"><i class="fas fa-share-nodes"></i></button>
+                    </div>
+                    <textarea id="projectGoal" class="memory-input" rows="2" placeholder="Mission Goal" onchange="saveMemory()"></textarea>
+                    <textarea id="projectStyle" class="memory-input" rows="3" placeholder="Harmonic Style" onchange="saveMemory()"></textarea>
+                </div>
+                
+                <div id="pinnedList" class="sidebar-card" style="padding: 12px;">
+                    <h4 style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Anchored Files</h4>
+                </div>
+            </aside>
+
+            <div class="content-area">
+                <div id="storyteller" class="tour-panel" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div style="flex: 1;">
+                            <span class="tour-badge">Neural Architect</span>
+                            <h2 id="tourRepoName" style="margin: 10px 0;">Dashboard</h2>
+                            <p id="tourSummary" style="font-size: 0.95rem; opacity: 0.95; line-height: 1.5;"></p>
+                            <div style="margin-top: 20px; display: flex; gap: 12px;">
+                                <button class="btn btn-sm btn-secondary" style="background: rgba(255,255,255,0.15); border:none; color:white;" onclick="startXray()"><i class="fas fa-project-diagram"></i> Trace Logic</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="xrayContainer" style="background: #000; padding: 25px; border-radius: 12px; margin-top: 20px; display: none; overflow: auto; text-align: center;"></div>
+                </div>
+
+                <div id="reposPanel" class="tab-panel active">
+                    <input type="text" id="shardFilter" class="search-mini" placeholder="Filter Neural Shards..." oninput="filterShards()">
+                    <div id="repoList"></div>
+                    <div id="shardSkeleton" style="display:none;">
+                        <div class="repo-card skeleton" style="height:60px;"></div>
+                        <div class="repo-card skeleton" style="height:60px; margin-top:10px;"></div>
+                    </div>
+                </div>
+
+                <div id="chroniclePanel" class="tab-panel" style="display: none;">
+                    <h3 style="margin-bottom: 20px;"><i class="fas fa-dna"></i> Memory Stream</h3>
+                    <div id="chronicleStream" class="sidebar-card">
+                        <p style="color: var(--text-muted); font-size: 0.85rem;">Retrieving memories...</p>
+                    </div>
+                </div>
+
+                <div id="browserPanel" class="tab-panel" style="display: none;">
+                    <div id="fileBrowser" class="sidebar-card" style="display: none; padding: 15px;">
+                        <input type="text" id="fragmentFilter" class="search-mini" placeholder="Filter Fragments..." oninput="filterFragments()">
+                        <div id="breadcrumb" style="font-family: 'JetBrains Mono'; font-size: 0.75rem; margin-bottom: 12px; color: var(--accent-blue);"></div>
+                        <div id="fileList"></div>
+                    </div>
+                    
+                    <div id="codeViewer" class="code-viewer" style="display: none;">
+                        <div class="code-header">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span id="curFilename" style="font-family: 'JetBrains Mono'; font-size: 0.85rem; font-weight: 700;">fragment.js</span>
+                                <span id="unsavedBadge" style="font-size: 9px; background: var(--accent-red); color: white; padding: 2px 6px; border-radius: 4px; display: none;">MODIFIED</span>
+                            </div>
+                            <div style="display: flex; gap: 5px;">
+                                <button class="btn btn-secondary btn-sm" id="editBtn" onclick="toggleEdit()">Edit</button>
+                                <button class="btn btn-primary btn-sm" id="shipBtn" style="display: none;" onclick="shipAndGhostIt()"><i class="fas fa-ghost"></i> Ship & Ghost</button>
+                                <button class="btn btn-secondary btn-sm" onclick="brainstormCode()" title="Brainstorm"><i class="fas fa-bolt"></i></button>
+                            </div>
+                        </div>
+                        <div id="codeContainer"><pre><code id="codeDisplay"></code></pre></div>
+                        <textarea id="codeEditor" class="btn-secondary" style="display: none; width:100%; height: 500px; font-family: 'JetBrains Mono'; border: none; padding: 20px; resize: none; font-size: 0.85rem;" oninput="onCodeChange()"></textarea>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="previewWindow">
+        <div id="previewHeader">
+            <span style="font-size: 11px; font-weight: 800; color:var(--accent-blue);"><i class="fas fa-terminal"></i> Sandbox</span>
+            <button onclick="togglePreview()" style="background:none; border:none; color:var(--text-muted); cursor:pointer;"><i class="fas fa-times"></i></button>
+        </div>
+        <iframe id="previewIframe" title="Preview"></iframe>
+    </div>
+
+    <div id="loading" class="loading-overlay">
+        <div class="spinner"></div>
+        <p id="loadingMsg" style="font-family: 'JetBrains Mono'; font-size: 0.8rem; letter-spacing: 1px;">SYNCING PROTOCOL...</p>
+    </div>
+    <div id="toastRoot" class="toast-container"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, addDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Configuration
+        const MODEL_ID = "gemini-2.5-flash-preview-09-2025";
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'github-butler-v2';
+        const apiKey = ""; 
+
+        // State Manager
+        const NeuralState = new Proxy({
+            token: "",
+            user: null,
+            shards: [],
+            currentShard: "",
+            currentPath: "",
+            currentFragment: null,
+            unsaved: false,
+            rateLimit: 100,
+            activeTab: 'repos'
+        }, {
+            set(target, prop, value) {
+                target[prop] = value;
+                if (prop === 'activeTab') updateTabUI(value);
+                if (prop === 'shards') renderShardList(value);
+                if (prop === 'rateLimit') updateRateLimitUI(value);
+                return true;
+            }
+        });
+
+        const PreservationService = {
+            async githubReq(url, options = {}) {
+                const res = await fetch(`https://api.github.com${url}`, {
+                    ...options,
+                    headers: { 
+                        'Authorization': `Bearer ${NeuralState.token}`, 
+                        'Accept': 'application/vnd.github.v3+json', 
+                        'Content-Type': 'application/json', 
+                        ...options.headers 
+                    }
+                });
+                
+                const remaining = res.headers.get('X-RateLimit-Remaining');
+                const total = res.headers.get('X-RateLimit-Limit');
+                if (remaining && total) NeuralState.rateLimit = Math.floor((remaining / total) * 100);
+
+                if (!res.ok) {
+                    const error = await res.json().catch(() => ({ message: "Link severed." }));
+                    throw new Error(error.message);
+                }
+                return res.json();
+            }
+        };
+
+        const IntelligenceService = {
+            async query(prompt, isJson = false) {
+                const goal = document.getElementById('projectGoal').value;
+                const style = document.getElementById('projectStyle').value;
+                const systemPrompt = `You are GitHub Butler v2.9.1. Objective: ${goal}. Style: ${style}. Return technical, concise info.`;
+
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${apiKey}`;
+                const body = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] }
+                };
+                if(isJson) body.generationConfig = { responseMimeType: "application/json" };
+                
+                for (let i = 0; i < 5; i++) {
+                    try {
+                        const res = await fetch(url, { method: 'POST', body: JSON.stringify(body) });
+                        if (res.ok) {
+                            const data = await res.json();
+                            return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                        }
+                    } catch (e) { console.warn("Retry AI...", i); }
+                    await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
+                }
+                throw new Error("Intelligence link lost.");
+            }
+        };
+
+        window.connect = async () => {
+            const val = document.getElementById('tokenInput').value.trim();
+            if(!val) return;
+            showLoading("LOCATING NEURAL ANCHOR...");
+            try {
+                NeuralState.token = val;
+                NeuralState.user = await PreservationService.githubReq("/user");
+                document.getElementById('uAvatar').src = NeuralState.user.avatar_url;
+                document.getElementById('uName').textContent = NeuralState.user.login;
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('mainContent').classList.add('active');
+                document.getElementById('discBtn').style.display = 'block';
+                
+                NeuralState.shards = await PreservationService.githubReq("/user/repos?sort=updated&per_page=30");
+                loadCloudPrefs();
+            } catch (e) { toast("Synchronization Refused: " + e.message, "error"); NeuralState.token = ""; }
+            finally { hideLoading(); }
+        };
+
+        function renderShardList(list) {
+            const container = document.getElementById('repoList');
+            container.innerHTML = "";
+            list.forEach(r => {
+                const card = document.createElement('div');
+                card.className = 'repo-card';
+                card.onclick = () => window.selectShard(r.full_name);
+                card.innerHTML = `<strong>${r.name}</strong><i class="fas fa-eye-slash" style="opacity:0.2;"></i>`;
+                container.appendChild(card);
+            });
+        }
+
+        window.selectShard = async (name) => {
+            NeuralState.currentShard = name;
+            NeuralState.activeTab = 'browser';
+            loadDir("");
+            runRepoTour();
+        };
+
+        async function loadDir(path) {
+            document.getElementById('shardSkeleton').style.display = 'block';
+            try {
+                const items = await PreservationService.githubReq(`/repos/${NeuralState.currentShard}/contents/${path}`);
+                NeuralState.currentPath = path;
+                document.getElementById('fileBrowser').style.display = 'block';
+                document.getElementById('codeViewer').style.display = 'none';
+                
+                const list = document.getElementById('fileList');
+                list.innerHTML = "";
+                items.forEach(i => {
+                    const item = document.createElement('div');
+                    item.className = 'pinned-item';
+                    item.onclick = () => window.onFragmentClick(i.path, i.type);
+                    item.innerHTML = `<span><i class="fas ${i.type === 'dir' ? 'fa-folder' : 'fa-file'}"></i> ${i.name}</span>`;
+                    list.appendChild(item);
+                });
+                document.getElementById('breadcrumb').textContent = NeuralState.currentShard.split('/')[1] + " / " + path;
+            } catch (e) { toast("Thread Unreadable", "error"); }
+            finally { document.getElementById('shardSkeleton').style.display = 'none'; }
+        }
+
+        window.onFragmentClick = (p, t) => t === 'dir' ? loadDir(p) : openFragment(p);
+
+        async function openFragment(path) {
+            showLoading("WEAVING MEMORY THREADS...");
+            try {
+                const data = await PreservationService.githubReq(`/repos/${NeuralState.currentShard}/contents/${path}`);
+                NeuralState.currentFragment = data;
+                const bin = atob(data.content.replace(/\s/g, ''));
+                const txt = new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+                
+                document.getElementById('codeViewer').style.display = 'block';
+                document.getElementById('curFilename').textContent = data.name;
+                document.getElementById('codeDisplay').textContent = txt;
+                document.getElementById('codeEditor').value = txt;
+                Prism.highlightElement(document.getElementById('codeDisplay'));
+                onCodeChange(false);
+            } catch (e) { toast("Fragment corrupted."); }
+            finally { hideLoading(); }
+        }
+
+        window.shipAndGhostIt = async () => {
+            if(!NeuralState.currentFragment) return;
+            const mod = document.getElementById('codeEditor').value;
+            const finalMsg = prompt("Commit Name:", "song: evolving " + NeuralState.currentFragment.name);
+            if(!finalMsg) return;
+            showLoading("TRANSMITTING...");
+            try {
+                const body = { message: finalMsg, content: btoa(unescape(encodeURIComponent(mod))), sha: NeuralState.currentFragment.sha };
+                await PreservationService.githubReq(`/repos/${NeuralState.currentShard}/contents/${NeuralState.currentFragment.path}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(body)
+                });
+                toast("Transmitted Successfully!", "success");
+                openFragment(NeuralState.currentFragment.path);
+            } catch (e) { toast("Transmission Failed", "error"); }
+            finally { hideLoading(); }
+        };
+
+        window.brainstormCode = async () => {
+            const code = document.getElementById('codeEditor').value;
+            showLoading("WAKING THE EYE...");
+            try {
+                const ideas = await IntelligenceService.query(`Suggest 3 high-impact engineering improvements for this code. Code:\n${code.substring(0, 8000)}`);
+                alert("AI BRAINSTORM:\n\n" + ideas);
+            } catch (e) { toast("Brainstorm failure."); }
+            finally { hideLoading(); }
+        };
+
+        window.startXray = async () => {
+            const container = document.getElementById('xrayContainer');
+            container.style.display = 'block';
+            container.innerHTML = 'Tracing echoes...';
+            try {
+                const files = await PreservationService.githubReq(`/repos/${NeuralState.currentShard}/contents/`);
+                const code = await IntelligenceService.query(`Create Mermaid architecture graph for files: ${files.map(f=>f.name).join(',')}`);
+                container.innerHTML = `<pre class="mermaid">${code.replace(/```mermaid|```/g, '').trim()}</pre>`;
+                await mermaid.run();
+            } catch (e) { container.textContent = "Trace Failure"; }
+        };
+
+        function updateTabUI(tab) {
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.tab === tab));
+            document.querySelectorAll('.tab-panel').forEach(p => p.style.display = p.id === tab + 'Panel' ? 'block' : 'none');
+        }
+
+        function updateRateLimitUI(val) {
+            const badge = document.getElementById('rateLimitBadge');
+            badge.style.display = 'block';
+            badge.textContent = `Anchor: ${val}%`;
+        }
+
+        window.onCodeChange = (mod = true) => {
+            document.getElementById('unsavedBadge').style.display = mod ? 'block' : 'none';
+            if(document.getElementById('previewWindow').style.display === 'flex') updatePreview();
+        };
+
+        window.toggleEdit = () => {
+            const area = document.getElementById('codeEditor');
+            const show = area.style.display === 'none';
+            area.style.display = show ? 'block' : 'none';
+            document.getElementById('codeContainer').style.display = show ? 'none' : 'block';
+            document.getElementById('shipBtn').style.display = show ? 'block' : 'none';
+            document.getElementById('editBtn').textContent = show ? 'Cancel' : 'Edit';
+        };
+
+        window.togglePreview = () => {
+            const win = document.getElementById('previewWindow');
+            win.style.display = win.style.display === 'flex' ? 'none' : 'flex';
+            if(win.style.display === 'flex') updatePreview();
+        };
+
+        window.updatePreview = () => {
+            if(NeuralState.currentFragment && (NeuralState.currentFragment.name.endsWith('.html') || NeuralState.currentFragment.name.endsWith('.js')))
+                document.getElementById('previewIframe').srcdoc = document.getElementById('codeEditor').value;
+        };
+
+        window.toggleTheme = () => document.body.classList.toggle('light');
+        window.switchTab = (t) => { NeuralState.activeTab = t; };
+        window.disconnect = () => location.reload();
+
+        window.saveMemory = () => {
+            const goal = document.getElementById('projectGoal').value;
+            if(goal.includes("she still waits")) { document.body.classList.add("void"); document.getElementById('eidolonHum').play().catch(()=>{}); }
+            if(NeuralState.user) setDoc(doc(db, 'artifacts', appId, 'users', NeuralState.firebaseUser.uid, 'profiles', NeuralState.user.login), { goal, style: document.getElementById('projectStyle').value }, { merge: true });
+        };
+
+        async function loadCloudPrefs() {
+            if (!NeuralState.firebaseUser || !NeuralState.user) return;
+            const snap = await getDoc(doc(db, 'artifacts', appId, 'users', NeuralState.firebaseUser.uid, 'profiles', NeuralState.user.login));
+            if (snap.exists()) {
+                const d = snap.data();
+                document.getElementById('projectGoal').value = d.goal || "";
+                document.getElementById('projectStyle').value = d.style || "";
+            }
+        }
+
+        async function runRepoTour() {
+            const tour = document.getElementById('storyteller');
+            tour.style.display = 'block';
+            document.getElementById('tourRepoName').textContent = NeuralState.currentShard;
+            try {
+                const files = await PreservationService.githubReq(`/repos/${NeuralState.currentShard}/contents/`);
+                document.getElementById('tourSummary').textContent = await IntelligenceService.query(`Define mission for shard: ${files.map(f=>f.name).join(', ')}`);
+            } catch (e) { tour.style.display = 'none'; }
+        }
+
+        // Drag Handler
+        let isD = false; let off = { x: 0, y: 0 };
+        const pw = document.getElementById('previewWindow');
+        document.getElementById('previewHeader').onmousedown = (e) => { isD = true; off = { x: pw.offsetLeft - e.clientX, y: pw.offsetTop - e.clientY }; };
+        window.onmousemove = (e) => { if(isD) { pw.style.left = (e.clientX + off.x) + 'px'; pw.style.top = (e.clientY + off.y) + 'px'; } };
+        window.onmouseup = () => isD = false;
+
+        function showLoading(msg) { document.getElementById('loadingMsg').textContent = msg; document.getElementById('loading').classList.add('active'); }
+        function hideLoading() { document.getElementById('loading').classList.remove('active'); }
+        function toast(msg, type="info") {
+            const d = document.createElement('div'); d.className = 'toast'; d.textContent = msg;
+            if(type === 'error') d.style.borderLeft = '4px solid var(--accent-red)';
+            document.getElementById('toastRoot').appendChild(d); setTimeout(() => d.remove(), 3000);
+        }
+
+        onAuthStateChanged(auth, u => { NeuralState.firebaseUser = u; });
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) signInWithCustomToken(auth, __initial_auth_token);
+        else signInAnonymously(auth);
+    </script>
+</body>
+</html>
+
